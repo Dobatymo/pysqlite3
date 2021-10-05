@@ -21,12 +21,14 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import os.path
 import threading
 import unittest
+from tempfile import gettempdir
 from pysqlite3 import dbapi2 as sqlite
 
 #from test.support import TESTFN, unlink
-TESTFN = '/tmp/pysqlite3_test'
+TESTFN = os.path.join(gettempdir(), "pysqlite3_test")
 from os import unlink
 
 

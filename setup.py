@@ -1,146 +1,90 @@
-# -*- coding: ISO-8859-1 -*-
-# setup.py: the distutils script
-#
 import os
-import setuptools
 import sys
+from glob import glob
+from setuptools import setup, Extension
 
-from distutils import log
-from distutils.command.build_ext import build_ext
-from setuptools import Extension
-
-# If you need to change anything, it should be enough to change setup.cfg.
-
-PACKAGE_NAME = 'pysqlite3'
-VERSION = '0.4.7'
-
-# define sqlite sources
-sources = [os.path.join('src', source)
-           for source in ["module.c", "connection.c", "cursor.c", "cache.c",
-                          "microprotocols.c", "prepare_protocol.c",
-                          "statement.c", "util.c", "row.c", "blob.c"]]
-
-# define packages
-packages = [PACKAGE_NAME]
-EXTENSION_MODULE_NAME = "._sqlite3"
-
-# Work around clang raising hard error for unused arguments
-if sys.platform == "darwin":
-    os.environ['CFLAGS'] = "-Qunused-arguments"
-    log.info("CFLAGS: " + os.environ['CFLAGS'])
+PACKAGE_NAME = "pysqlite3-wheels"
+VERSION = "0.4.7"
 
 
 def quote_argument(arg):
-    q = '\\"' if sys.platform == 'win32' and sys.version_info < (3, 9) else '"'
+    is_cibuildwheel = os.environ.get("CIBUILDWHEEL", "0") == "1"
+
+    if sys.platform == "win32" and (
+        (is_cibuildwheel and sys.version_info < (3, 7))
+        or (not is_cibuildwheel and sys.version_info < (3, 9))
+    ):
+        q = '\\"'
+    else:
+        q = '"'
+
     return q + arg + q
 
-define_macros = [('MODULE_NAME', quote_argument(PACKAGE_NAME + '.dbapi2'))]
 
+sources = glob("src/*.c") + ["sqlite3.c"]
 
-class SystemLibSqliteBuilder(build_ext):
-    description = "Builds a C extension linking against libsqlite3 library"
+include_dirs = ["."]
 
-    def build_extension(self, ext):
-        log.info(self.description)
+define_macros = [
+    ("MODULE_NAME", quote_argument("pysqlite3.dbapi2")),
+    # Always use memory for temp store.
+    ("SQLITE_TEMP_STORE", "3"),
+    # Increase the maximum number of "host parameters" which SQLite will accept
+    ("SQLITE_MAX_VARIABLE_NUMBER", "250000"),
+    # Increase maximum allowed memory-map size to 1TB
+    ("SQLITE_MAX_MMAP_SIZE", str(2**40)),
+    ("SQLITE_ALLOW_COVERING_INDEX_SCAN", "1"),
+    ("SQLITE_ENABLE_FTS3", "1"),
+    ("SQLITE_ENABLE_FTS3_PARENTHESIS", "1"),
+    ("SQLITE_ENABLE_FTS4", "1"),
+    ("SQLITE_ENABLE_FTS5", "1"),
+    ("SQLITE_ENABLE_JSON1", "1"),
+    ("SQLITE_ENABLE_LOAD_EXTENSION", "1"),
+    ("ENABLE_MATH_FUNCTIONS", "1"),
+    ("SQLITE_ENABLE_RTREE", "1"),
+    ("SQLITE_ENABLE_STAT4", "1"),
+    ("SQLITE_ENABLE_UPDATE_DELETE_LIMIT", "1"),
+    ("SQLITE_SOUNDEX", "1"),
+    ("SQLITE_USE_URI", "1"),
+]
 
-        # For some reason, when setup.py develop is run, it ignores the
-        # configuration in setup.cfg, so we just explicitly add libsqlite3.
-        # Oddly, running setup.py build_ext -i (for in-place) works fine and
-        # correctly reads the setup.cfg.
-        ext.libraries.append('sqlite3')
-        build_ext.build_extension(self, ext)
+if sys.platform == "darwin":
+    # Work around clang raising hard error for unused arguments
+    extra_compile_args = ["-Qunused-arguments"]
+else:
+    extra_compile_args = []
 
+if sys.platform != "win32":
+    # Include math library, required for fts5.
+    extra_link_args = ["-lm"]
+else:
+    extra_link_args = []
 
-class AmalgationLibSqliteBuilder(build_ext):
-    description = "Builds a C extension using a sqlite3 amalgamation"
+module = Extension(
+    name="pysqlite3._sqlite3",
+    sources=sources,
+    include_dirs=include_dirs,
+    define_macros=define_macros,
+    extra_compile_args=extra_compile_args,
+    extra_link_args=extra_link_args,
+    language="c",
+)
 
-    amalgamation_root = "."
-    amalgamation_header = os.path.join(amalgamation_root, 'sqlite3.h')
-    amalgamation_source = os.path.join(amalgamation_root, 'sqlite3.c')
+with open("README.md", "r", encoding="utf-8") as fr:
+    long_description = fr.read()
 
-    amalgamation_message = ('Sqlite amalgamation not found. Please download '
-                            'or build the amalgamation and make sure the '
-                            'following files are present in the pysqlite3 '
-                            'folder: sqlite3.h, sqlite3.c')
-
-    def check_amalgamation(self):
-        if not os.path.exists(self.amalgamation_root):
-            os.mkdir(self.amalgamation_root)
-
-        header_exists = os.path.exists(self.amalgamation_header)
-        source_exists = os.path.exists(self.amalgamation_source)
-        if not header_exists or not source_exists:
-            raise RuntimeError(self.amalgamation_message)
-
-    def build_extension(self, ext):
-        log.info(self.description)
-
-        # it is responsibility of user to provide amalgamation
-        self.check_amalgamation()
-
-        # Feature-ful library.
-        features = (
-            'ALLOW_COVERING_INDEX_SCAN',
-            'ENABLE_FTS3',
-            'ENABLE_FTS3_PARENTHESIS',
-            'ENABLE_FTS4',
-            'ENABLE_FTS5',
-            'ENABLE_JSON1',
-            'ENABLE_LOAD_EXTENSION',
-            'ENABLE_MATH_FUNCTIONS',
-            'ENABLE_RTREE',
-            'ENABLE_STAT4',
-            'ENABLE_UPDATE_DELETE_LIMIT',
-            'SOUNDEX',
-            'USE_URI',
-        )
-        for feature in features:
-            ext.define_macros.append(('SQLITE_%s' % feature, '1'))
-
-        # Always use memory for temp store.
-        ext.define_macros.append(("SQLITE_TEMP_STORE", "3"))
-
-        # Increase the maximum number of "host parameters" which SQLite will accept
-        ext.define_macros.append(("SQLITE_MAX_VARIABLE_NUMBER", "250000"))
-
-        # Increase maximum allowed memory-map size to 1TB
-        ext.define_macros.append(("SQLITE_MAX_MMAP_SIZE", str(2**40)))
-
-        ext.include_dirs.append(self.amalgamation_root)
-        ext.sources.append(os.path.join(self.amalgamation_root, "sqlite3.c"))
-
-        if sys.platform != "win32":
-            # Include math library, required for fts5.
-            ext.extra_link_args.append("-lm")
-
-        build_ext.build_extension(self, ext)
-
-    def __setattr__(self, k, v):
-        # Make sure we don't link against the SQLite
-        # library, no matter what setup.cfg says
-        if k == "libraries":
-            v = None
-        self.__dict__[k] = v
-
-
-def get_setup_args():
-    return dict(
+if __name__ == "__main__":
+    setup(
         name=PACKAGE_NAME,
         version=VERSION,
         description="DB-API 2.0 interface for Sqlite 3.x",
-        long_description='',
+        long_description=long_description,
+        long_description_content_type="text/markdown",
         author="Charles Leifer",
         author_email="coleifer@gmail.com",
         license="zlib/libpng",
         platforms="ALL",
         url="https://github.com/coleifer/pysqlite3",
-        package_dir={PACKAGE_NAME: "pysqlite3"},
-        packages=packages,
-        ext_modules=[Extension(
-            name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
-            sources=sources,
-            define_macros=define_macros)
-        ],
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
@@ -151,19 +95,8 @@ def get_setup_args():
             "Programming Language :: C",
             "Programming Language :: Python",
             "Topic :: Database :: Database Engines/Servers",
-            "Topic :: Software Development :: Libraries :: Python Modules"],
-        cmdclass={
-            "build_static": AmalgationLibSqliteBuilder,
-            "build_ext": SystemLibSqliteBuilder
-        }
+            "Topic :: Software Development :: Libraries :: Python Modules",
+        ],
+        packages=["pysqlite3"],
+        ext_modules=[module],
     )
-
-
-def main():
-    try:
-        setuptools.setup(**get_setup_args())
-    except BaseException as ex:
-        log.info(str(ex))
-
-if __name__ == "__main__":
-    main()
