@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
         os: [ubuntu-20.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
 
@@ -75,7 +75,7 @@ jobs:
       run: |
         python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_SKIP: pp* cp311-*
+        CIBW_SKIP: pp*
     - uses: actions/upload-artifact@v3
       with:
         name: wheels
