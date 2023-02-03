@@ -402,8 +402,8 @@ static void pysqlite_close_all_blobs(pysqlite_Connection *self)
     PyObject *weakref;
     PyObject *blob;
 
-    for (i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
-        weakref = PyList_GET_ITEM(self->blobs, i);
+    for (i = 0; i < PyList_Size(self->blobs); i++) {
+        weakref = PyList_GetItem(self->blobs, i);
         blob = PyWeakref_GetObject(weakref);
         if (blob != Py_None) {
             pysqlite_blob_close((pysqlite_Blob*)blob);

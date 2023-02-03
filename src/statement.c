@@ -231,7 +231,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
         if (PyTuple_CheckExact(parameters)) {
             num_params = PyTuple_GET_SIZE(parameters);
         } else if (PyList_CheckExact(parameters)) {
-            num_params = PyList_GET_SIZE(parameters);
+            num_params = PyList_Size(parameters);
         } else {
             num_params = PySequence_Size(parameters);
         }
@@ -247,7 +247,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 current_param = PyTuple_GET_ITEM(parameters, i);
                 Py_XINCREF(current_param);
             } else if (PyList_CheckExact(parameters)) {
-                current_param = PyList_GET_ITEM(parameters, i);
+                current_param = PyList_GetItem(parameters, i);
                 Py_XINCREF(current_param);
             } else {
                 current_param = PySequence_GetItem(parameters, i);

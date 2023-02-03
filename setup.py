@@ -1,7 +1,9 @@
 import os
 import sys
 from glob import glob
-from setuptools import setup, Extension
+
+from setuptools import Extension, setup
+from wheel.bdist_wheel import bdist_wheel
 
 PACKAGE_NAME = "pysqlite3-wheels"
 VERSION = "0.5.0"
@@ -21,11 +23,23 @@ def quote_argument(arg):
     return q + arg + q
 
 
+class bdist_wheel_abi3(bdist_wheel):
+    def get_tag(self):
+        python, abi, plat = super().get_tag()
+
+        if python.startswith("cp"):
+            # on CPython, our wheels are abi3 and compatible back to 3.6
+            return "cp36", "abi3", plat
+
+        return python, abi, plat
+
+
 sources = glob("src/*.c") + ["sqlite3.c"]
 
 include_dirs = ["."]
 
 define_macros = [
+    ("Py_LIMITED_API", "0x03060000"),
     ("MODULE_NAME", quote_argument("pysqlite3.dbapi2")),
     # Always use memory for temp store.
     ("SQLITE_TEMP_STORE", "3"),
@@ -68,6 +82,7 @@ module = Extension(
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
     language="c",
+    py_limited_api=True,
 )
 
 with open("README.md", "r", encoding="utf-8") as fr:
@@ -99,4 +114,5 @@ if __name__ == "__main__":
         ],
         packages=["pysqlite3"],
         ext_modules=[module],
+        cmdclass={"bdist_wheel": bdist_wheel_abi3},
     )

@@ -256,9 +256,9 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types
                 && self->row_cast_map != NULL
-                && i < PyList_GET_SIZE(self->row_cast_map))
+                && i < PyList_Size(self->row_cast_map))
         {
-            converter = PyList_GET_ITEM(self->row_cast_map, i);
+            converter = PyList_GetItem(self->row_cast_map, i);
         }
         else {
             converter = Py_None;

@@ -26,8 +26,8 @@ static void remove_blob_from_connection_blob_list(pysqlite_Blob *self)
     Py_ssize_t i;
     PyObject *item;
 
-    for (i = 0; i < PyList_GET_SIZE(self->connection->blobs); i++) {
-        item = PyList_GET_ITEM(self->connection->blobs, i);
+    for (i = 0; i < PyList_Size(self->connection->blobs); i++) {
+        item = PyList_GetItem(self->connection->blobs, i);
         if (PyWeakref_GetObject(item) == (PyObject *)self) {
             PyList_SetSlice(self->connection->blobs, i, i+1, NULL);
             break;
@@ -59,7 +59,8 @@ static void pysqlite_blob_dealloc(pysqlite_Blob* self)
 {
     _close_blob_inner(self);
     Py_XDECREF(self->connection);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyTypeObject *typeobj = Py_TYPE((PyObject*)self);
+    ((freefunc)PyType_GetSlot(typeobj, Py_tp_free))((PyObject*)self);
 }
 
 
@@ -115,7 +116,7 @@ static PyObject* inner_read(pysqlite_Blob *self, int read_length, int offset)
     if (!buffer) {
         return NULL;
     }
-    raw_buffer = PyBytes_AS_STRING(buffer);
+    raw_buffer = PyBytes_AsString(buffer);
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_read(self->blob, raw_buffer, read_length, self->offset);
