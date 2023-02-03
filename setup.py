@@ -4,7 +4,7 @@ from glob import glob
 from setuptools import setup, Extension
 
 PACKAGE_NAME = "pysqlite3-wheels"
-VERSION = "0.4.7"
+VERSION = "0.4.8"
 
 
 def quote_argument(arg):
