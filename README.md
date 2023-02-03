@@ -16,53 +16,11 @@ Additional features:
 * Simplified detection of DML statements via `sqlite3_stmt_readonly`.
 * Sqlite native backup API (also present in standard library 3.7 and newer).
 
-A completely self-contained binary package (wheel) is available for versions
-0.4.1 and newer as `pysqlite3-binary`. This package contains the latest release
-of SQLite compiled with numerous extensions, and requires no external
-dependencies.
+pysqlite3-wheels
+================
 
-Building with System SQLite
----------------------------
-
-To build `pysqlite3` linked against the system SQLite, run:
+A completely self-contained binary package (wheel) is available for versions 0.4.6 and newer as `pysqlite3-wheels` for all platforms. This package is linked against a recent release of SQLite compiled with numerous extensions, and requires no external dependencies.
 
 ```
-$ python setup.py build
-```
-
-Building a statically-linked library
-------------------------------------
-
-To build `pysqlite3` statically-linked against a particular version of SQLite,
-you need to obtain the SQLite3 source code and copy `sqlite3.c` and `sqlite3.h`
-into the source tree.
-
-```
-# Download the latest release of SQLite source code and build the source
-# amalgamation files (sqlite3.c and sqlite3.h).
-$ wget https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release \
-    -O sqlite.tar.gz
-$ tar xzf sqlite.tar.gz
-$ cd sqlite/
-$ ./configure
-$ make sqlite3.c
-
-# Copy the sqlite3 amalgamation files into the root of the pysqlite3 checkout
-# and run build_static + build:
-$ cp sqlite/sqlite3.[ch] pysqlite3/
-$ cd pysqlite3
-$ python setup.py build_static build
-```
-
-You now have a statically-linked, completely self-contained `pysqlite3`.
-
-Using the binary package
-------------------------
-
-A binary package (wheel) is available for linux with a completely
-self-contained  `pysqlite3`, statically-linked against the most recent release
-of SQLite.
-
-```
-$ pip install pysqlite3-binary
+$ pip install pysqlite3-wheels
 ```

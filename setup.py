@@ -77,14 +77,14 @@ if __name__ == "__main__":
     setup(
         name=PACKAGE_NAME,
         version=VERSION,
-        description="DB-API 2.0 interface for Sqlite 3.x",
+        description="DB-API 2.0 interface for SQLite 3.x",
         long_description=long_description,
         long_description_content_type="text/markdown",
         author="Charles Leifer",
         author_email="coleifer@gmail.com",
         license="zlib/libpng",
         platforms="ALL",
-        url="https://github.com/coleifer/pysqlite3",
+        url="https://github.com/Dobatymo/pysqlite3",
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
